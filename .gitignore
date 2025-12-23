@@ -19,7 +19,7 @@ tsr_env/
 # Data (never commit)
 # =====================
 data/
-datasets/
+raw/
 
 # =====================
 # Model Outputs / Runs
