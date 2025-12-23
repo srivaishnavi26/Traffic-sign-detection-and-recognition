@@ -1,0 +1,112 @@
+import cv2
+import torch
+from pathlib import Path
+from torchvision import transforms, models
+from PIL import Image
+
+from label_map import LABEL_MAP
+from gtsrb_sign_names import SIGN_NAMES
+
+YOLO_DIR = Path("runs/detect/predict9")
+CROPS_DIR = YOLO_DIR / "crops" / "traffic_sign"
+LABELS_DIR = YOLO_DIR / "labels"
+VIDEOS_DIR = Path("data/raw/road_videos")
+OUT_DIR = Path("runs/final")
+
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+# -------- classifier --------
+ckpt = torch.load("traffic_sign_classifier.pth", map_location=DEVICE)
+classes = ckpt["classes"]
+
+model = models.resnet18(weights=None)
+model.fc = torch.nn.Linear(model.fc.in_features, len(classes))
+model.load_state_dict(ckpt["model"])
+model.to(DEVICE)
+model.eval()
+
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(
+        mean=[0.485, 0.456, 0.406],
+        std=[0.229, 0.224, 0.225]
+    )
+])
+
+def classify_crop(path):
+    img = Image.open(path).convert("RGB")
+    img = transform(img).unsqueeze(0).to(DEVICE)
+    with torch.no_grad():
+        pred = model(img).argmax(1).item()
+    folder_id = LABEL_MAP[str(pred)]
+    return SIGN_NAMES.get(folder_id, folder_id)
+
+OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+# -------- batch processing --------
+for video_path in VIDEOS_DIR.glob("*.mp4"):
+    video_name = video_path.stem
+    print(f"Processing {video_name}")
+
+    cap = cv2.VideoCapture(str(video_path))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    W = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    H = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    out_path = OUT_DIR / f"{video_name}_output.mp4"
+    writer = cv2.VideoWriter(
+        str(out_path),
+        cv2.VideoWriter_fourcc(*"mp4v"),
+        fps,
+        (W, H)
+    )
+
+    frame_id = 0
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        label_file = LABELS_DIR / f"{video_name}_{frame_id}.txt"
+
+        if label_file.exists():
+            with open(label_file) as f:
+                for det_idx, line in enumerate(f):
+                    _, xc, yc, w, h = map(float, line.split())
+
+                    x1 = int((xc - w / 2) * W)
+                    y1 = int((yc - h / 2) * H)
+                    x2 = int((xc + w / 2) * W)
+                    y2 = int((yc + h / 2) * H)
+
+                    if det_idx == 0:
+                        crop_name = f"{video_name}_{frame_id}.jpg"
+                    else:
+                        crop_name = f"{video_name}_{frame_id}{det_idx + 1}.jpg"
+
+                    crop_path = CROPS_DIR / crop_name
+
+                    if crop_path.exists():
+                        label = classify_crop(crop_path)
+
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                        cv2.putText(
+                            frame,
+                            label,
+                            (x1, y1 - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.8,
+                            (0, 255, 0),
+                            2
+                        )
+
+        writer.write(frame)
+        frame_id += 1
+
+    cap.release()
+    writer.release()
+    print(f"Saved → {out_path}")
+
+print("ALL VIDEOS PROCESSED")
