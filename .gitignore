@@ -12,29 +12,63 @@ __pycache__/
 .env
 .venv/
 venv/
-tsr_env/
 env/
+tsr_env/
 
 # =====================
-# Data
+# Data (never commit)
 # =====================
-data/raw/
-data/processed/
-data/splits/
+data/
+datasets/
 
 # =====================
 # Model Outputs / Runs
 # =====================
 runs/
+outputs/
 weights/
-*.pth
+logs/
+
+# model files
 *.pt
+*.pth
+*.onnx
+*.engine
+*.tflite
+*.h5
 
 # =====================
 # Experiments
 # =====================
 experiments/*
 !experiments/README.md
+
+# =====================
+# Videos / Media
+# =====================
+*.mp4
+*.avi
+*.mov
+
+# =====================
+# Archives
+# =====================
+*.zip
+*.tar
+*.tar.gz
+
+# =====================
+# Notebooks
+# =====================
+.ipynb_checkpoints/
+
+# =====================
+# Testing / Coverage
+# =====================
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
 
 # =====================
 # OS
