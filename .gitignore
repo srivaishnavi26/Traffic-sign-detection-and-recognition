@@ -1,29 +1,49 @@
+# =====================
 # Python
+# =====================
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# =====================
+# Virtual Environments
+# =====================
 .env
-.venv
-venv/
-#  Virtual environments
 .venv/
+venv/
 tsr_env/
 env/
 
+# =====================
 # Data
+# =====================
 data/raw/
 data/processed/
 data/splits/
 
+# =====================
+# Model Outputs / Runs
+# =====================
+runs/
+weights/
+*.pth
+*.pt
+
+# =====================
 # Experiments
+# =====================
 experiments/*
 !experiments/README.md
 
+# =====================
 # OS
+# =====================
 .DS_Store
 Thumbs.db
 
+# =====================
 # IDE
+# =====================
 .vscode/
 .idea/
