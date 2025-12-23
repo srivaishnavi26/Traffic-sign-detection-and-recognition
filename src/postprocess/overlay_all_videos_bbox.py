@@ -1,12 +1,15 @@
 import cv2
+import time
 import torch
 from pathlib import Path
 from torchvision import transforms, models
 from PIL import Image
 
+from temporal_consensus import TemporalConsensus
 from label_map import LABEL_MAP
 from gtsrb_sign_names import SIGN_NAMES
 
+# ---------------- PATHS ----------------
 YOLO_DIR = Path("runs/detect/predict9")
 CROPS_DIR = YOLO_DIR / "crops" / "traffic_sign"
 LABELS_DIR = YOLO_DIR / "labels"
@@ -15,7 +18,7 @@ OUT_DIR = Path("runs/final")
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-# -------- classifier --------
+# ---------------- LOAD CLASSIFIER ----------------
 ckpt = torch.load("traffic_sign_classifier.pth", map_location=DEVICE)
 classes = ckpt["classes"]
 
@@ -34,20 +37,34 @@ transform = transforms.Compose([
     )
 ])
 
-def classify_crop(path):
-    img = Image.open(path).convert("RGB")
+import torch.nn.functional as F
+
+CONF_THRESHOLD = 0.75
+
+def classify_crop(img_path):
+    img = Image.open(img_path).convert("RGB")
     img = transform(img).unsqueeze(0).to(DEVICE)
+
     with torch.no_grad():
-        pred = model(img).argmax(1).item()
-    folder_id = LABEL_MAP[str(pred)]
+        logits = model(img)
+        probs = F.softmax(logits, dim=1)
+        conf, pred = torch.max(probs, dim=1)
+
+    if conf.item() < CONF_THRESHOLD:
+        return "UNKNOWN"
+
+    folder_id = LABEL_MAP[str(pred.item())]
     return SIGN_NAMES.get(folder_id, folder_id)
 
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# -------- batch processing --------
+# ---------------- PROCESS ALL VIDEOS ----------------
 for video_path in VIDEOS_DIR.glob("*.mp4"):
     video_name = video_path.stem
     print(f"Processing {video_name}")
+
+    # one consensus buffer per video
+    consensus = TemporalConsensus(window=7)
 
     cap = cv2.VideoCapture(str(video_path))
     fps = cap.get(cv2.CAP_PROP_FPS)
@@ -81,6 +98,7 @@ for video_path in VIDEOS_DIR.glob("*.mp4"):
                     x2 = int((xc + w / 2) * W)
                     y2 = int((yc + h / 2) * H)
 
+                    # YOLO crop naming rule
                     if det_idx == 0:
                         crop_name = f"{video_name}_{frame_id}.jpg"
                     else:
@@ -89,7 +107,8 @@ for video_path in VIDEOS_DIR.glob("*.mp4"):
                     crop_path = CROPS_DIR / crop_name
 
                     if crop_path.exists():
-                        label = classify_crop(crop_path)
+                        raw_label = classify_crop(crop_path)
+                        label = consensus.smooth(det_idx, raw_label)
 
                         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                         cv2.putText(
