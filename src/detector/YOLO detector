@@ -1,0 +1,6 @@
+yolo detect predict \
+  model=runs/detect/train6/weights/best.pt \
+  source=data/raw/road_videos \
+  save_txt=True \
+  save_crop=True \
+  name=predict_germany

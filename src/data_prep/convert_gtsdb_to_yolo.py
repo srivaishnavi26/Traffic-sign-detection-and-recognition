@@ -2,19 +2,14 @@ import shutil
 from pathlib import Path
 from PIL import Image
 from tqdm import tqdm
-
 # Paths
 RAW_DIR = Path("data/raw/GTSDB/TrainIJCNN2013/TrainIJCNN2013")
 GT_FILE = RAW_DIR / "gt.txt"
-
 IMG_OUT = Path("data/detection/images/train")
 LBL_OUT = Path("data/detection/labels/train")
-
 IMG_OUT.mkdir(parents=True, exist_ok=True)
 LBL_OUT.mkdir(parents=True, exist_ok=True)
-
 annotations = {}
-
 # Read gt.txt
 with open(GT_FILE, "r") as f:
     for line in f:

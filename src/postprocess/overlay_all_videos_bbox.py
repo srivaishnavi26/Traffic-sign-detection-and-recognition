@@ -10,11 +10,11 @@ from label_map import LABEL_MAP
 from gtsrb_sign_names import SIGN_NAMES
 
 # ---------------- PATHS ----------------
-YOLO_DIR = Path("runs/detect/predict9")
-CROPS_DIR = YOLO_DIR / "crops" / "traffic_sign"
-LABELS_DIR = YOLO_DIR / "labels"
-VIDEOS_DIR = Path("data/raw/road_videos")
-OUT_DIR = Path("runs/final")
+YOLO_DIR = Path("runs/detect/predict9") #prediction
+CROPS_DIR = YOLO_DIR / "crops" / "traffic_sign" #classification
+LABELS_DIR = YOLO_DIR / "labels" #labels from text file
+VIDEOS_DIR = Path("data/raw/road_videos") #rawdata
+OUT_DIR = Path("runs/final") #output
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
