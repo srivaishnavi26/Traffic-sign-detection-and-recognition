@@ -6,15 +6,15 @@ from PIL import Image
 
 from label_map import LABEL_MAP
 from gtsrb_sign_names import SIGN_NAMES
-
-VIDEO_NAME = "Video6"
+from speed_sign_ocr import read_speed_number
+VIDEO_NAME = "BKS_Road"
 VIDEO_PATH = Path(f"data/raw/road_videos/{VIDEO_NAME}.mp4")
 
-YOLO_DIR = Path("runs/detect/predict9")
+YOLO_DIR = Path("runs/detect/BKS_Road")
 CROPS_DIR = YOLO_DIR / "crops" / "traffic_sign"
 LABELS_DIR = YOLO_DIR / "labels"
 
-OUT_PATH = Path("runs/final/video8_bbox_output.mp4")
+OUT_PATH = Path("runs/final/BKS_OP.mp4")
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 

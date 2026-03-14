@@ -41,5 +41,12 @@ SIGN_NAMES = {
     "39": "Keep Left",
     "40": "Roundabout Mandatory",
     "41": "End of No Overtaking",
-    "42": "End No Overtaking (Trucks)"
+    "42": "End No Overtaking (Trucks)",
+    "43": "Chevron / Curve Indicator Left",
+    "44": "Go Slow",
+    "45": "Overtaking Prohibited",
+    "46": "Narrow Bridge",
+    "47": "Overhead cables",
+    "48": "No Parking",
+    "49": "Chevron / Curve Indicator Right"
 }

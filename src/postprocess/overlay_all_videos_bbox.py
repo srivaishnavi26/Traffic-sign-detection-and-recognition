@@ -8,7 +8,7 @@ from PIL import Image
 from temporal_consensus import TemporalConsensus
 from label_map import LABEL_MAP
 from gtsrb_sign_names import SIGN_NAMES
-
+from speed_sign_ocr import read_speed_number
 # ---------------- PATHS ----------------
 YOLO_DIR = Path("runs/detect/predict9") #prediction
 CROPS_DIR = YOLO_DIR / "crops" / "traffic_sign" #classification
@@ -108,6 +108,13 @@ for video_path in VIDEOS_DIR.glob("*.mp4"):
 
                     if crop_path.exists():
                         raw_label = classify_crop(crop_path)
+
+                        if "speed limit" in raw_label.lower():
+                            number = read_speed_number(crop_path)
+
+                            if number:
+                                raw_label = f"Speed Limit {number}"
+
                         label = consensus.smooth(det_idx, raw_label)
 
                         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)

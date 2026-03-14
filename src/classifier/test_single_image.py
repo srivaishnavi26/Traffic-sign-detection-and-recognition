@@ -23,7 +23,7 @@ model.load_state_dict(ckpt["model"])
 model.to(DEVICE)
 model.eval()
 
-img_path = Path("data/classification/train/33/00033_00000_00027.png")
+img_path = Path("data/classification/train/44/BKS_road_5555.jpg")
 img = Image.open(img_path).convert("RGB")
 img = transform(img).unsqueeze(0).to(DEVICE)
 

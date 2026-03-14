@@ -4,7 +4,7 @@ from PIL import Image
 from pathlib import Path
 
 MODEL_PATH = Path("traffic_sign_classifier.pth")
-CROPS_DIR = Path("runs/detect/predict9/crops")
+CROPS_DIR = Path("runs/detect/BKS_Road/crops")
 OUT_FILE = Path("runs/classifier/raw_predictions.txt")
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 

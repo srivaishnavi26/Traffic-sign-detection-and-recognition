@@ -1,42 +1,55 @@
-from collections import defaultdict, Counter
+from collections import deque, Counter
 from pathlib import Path
 
-RAW_PRED_FILE = Path("runs/classifier/raw_predictions.txt")
-OUT_FILE = Path("runs/classifier/temporal_predictions.txt")
+WINDOW = 5
+UNKNOWN = "UNKNOWN"
 
-WINDOW = 7
-CONF_THRESH = 0.6
+def majority_vote(labels):
+    valid = [l for l in labels if l != UNKNOWN]
+    if not valid:
+        return UNKNOWN
+    return Counter(valid).most_common(1)[0][0]
 
-frames = defaultdict(list)
+def parse_filename(name):
+    parts = name.split("_")
 
-with open(RAW_PRED_FILE) as f:
+    video = "_".join(parts[:-1])   # everything except last part
+    frame = parts[-1]
+
+    # remove duplicate crop suffix like " (2)"
+    frame = frame.split(" ")[0]
+
+    return video, int(frame)
+
+
+pred_file = Path("runs/classifier/raw_predictions.txt")
+out_file = Path("runs/classifier/temporal_predictions.txt")
+out_file.parent.mkdir(parents=True, exist_ok=True)
+
+history = {}
+results = []
+
+with open(pred_file) as f:
     for line in f:
-        if not line.strip():
+        line = line.strip()
+        if not line:
             continue
 
-        fname, cls, conf = line.strip().split(",")
+        fname, label, conf = line.split(",")
+        conf = float(conf)
 
-        if cls == "UNKNOWN":
-            continue
+        video, frame = parse_filename(fname)
 
-        _, frame_no = fname.split("_")
-        frames[int(frame_no)].append((cls, float(conf)))
+        if video not in history:
+            history[video] = deque(maxlen=WINDOW)
 
-with open(OUT_FILE, "w") as out:
-    for frame_no in sorted(frames):
-        window_preds = []
-        for i in range(frame_no - WINDOW, frame_no + WINDOW + 1):
-            window_preds.extend(frames.get(i, []))
+        history[video].append(label)
+        stable = majority_vote(history[video])
 
-        labels = [cls for cls, conf in window_preds if conf >= CONF_THRESH]
+        results.append((fname, label, stable, conf))
 
-        if not labels:
-            continue
+with open(out_file, "w") as f:
+    for fname, raw, stable, conf in results:
+        f.write(f"{fname},{raw},{stable},{conf:.2f}\n")
 
-        stable = Counter(labels).most_common(1)[0][0]
-        raw = frames[frame_no][0][0]
-        conf = max(c for _, c in frames[frame_no])
-
-        out.write(f"Video8_{frame_no},{raw},{stable},{conf:.3f}\n")
-
-print("Temporal predictions regenerated (UNKNOWN removed)")
+print(f"Temporal consensus applied: {len(results)} entries saved")
